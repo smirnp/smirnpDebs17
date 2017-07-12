@@ -46,8 +46,8 @@ public class Window{
 
 
 
-    public Date getTupleTimestamp(int index){
-        return tuples[index].getTimestamp();
+    public Tuple getTuple(int index){
+        return tuples[index];
     }
 
     public double[][] getDimentionedValues(){

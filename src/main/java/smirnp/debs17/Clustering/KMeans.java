@@ -99,8 +99,7 @@ public class KMeans {
             pointsToClusterAssignment[i] = findClusterId(points[i]);
 
 
-        System.out.println("   Iterations done: " + iteration+" final distance: "+String.valueOf(distance));
-        //System.out.println("Centroid distances: " + distance);
+        //System.out.println("   Iterations done: " + iteration+" final distance: "+String.valueOf(distance));
     }
 
     public List<Cluster> getClusters() {

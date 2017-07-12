@@ -10,10 +10,11 @@ import java.util.Date;
 public class Tuple {
     //private final int skip = 3;
     private Date timeStamp;
-    private double[] values;
+    private final double[] values;
+    private final int id;
 
-    public Tuple(String str){
-
+    public Tuple(int _id, String str){
+        id = _id;
         String[] splitted = str.split(", ");
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd hh:mm:ss");
         try {
@@ -45,4 +46,6 @@ public class Tuple {
     public double[] getValues(){
         return values;
     }
+
+    public int getId(){return id;}
 }
