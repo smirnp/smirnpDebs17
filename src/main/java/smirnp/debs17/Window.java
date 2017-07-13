@@ -1,7 +1,5 @@
 package smirnp.debs17;
 
-import com.google.common.primitives.Ints;
-
 import java.util.*;
 
 /**
@@ -58,10 +56,10 @@ public class Window{
         return Math.min(windowSize, totalTuplesCounter);
     }
 
-    public Date[] getTimestamps(){
-        Date[] ret = new Date[tuples.length];
-        for(int i=0; i< tuples.length; i++)
-            ret[i] = tuples[i].getTimestamp();
-        return ret;
-    }
+//    public Date[] getTimestamps(){
+//        Date[] ret = new Date[tuples.length];
+//        for(int i=0; i< tuples.length; i++)
+//            ret[i] = tuples[i].getLocalDateTime();
+//        return ret;
+//    }
 }

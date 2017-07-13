@@ -1,14 +1,8 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix hobbit: <http://w3id.org/hobbit/vocab#> .
-@prefix gerbilqa: <http://w3id.org/gerbil/qa/hobbit/vocab#> .
 
-<http://www.example.org/smirnp-debs17/smirnp-debs17> a  hobbit:SystemInstance; 
+<http://www.example.org/smirnp-debs17/smirnp-debs17-system> a  hobbit:SystemInstance;
 	rdfs:label	"smirnp-debs17"@en;
 	rdfs:comment	"Debs17 challenge solution by Pavel Smirnov"@en;
-    hobbit:imageName "git.project-hobbit.eu:4567/smirnp/smirnp-debs17";
-    hobbit:implementsAPI <http://www.example.org/exampleBenchmark/debsAPI>;
-    <http://www.debs2017.org/gc/machineCount> "1000"^^xsd:unsignedInt;
-    <http://www.debs2017.org/gc/probabilityThreshold> "0.005"^^xsd:double;
-    <http://www.debs2017.org/gc/windowSize> "10"^^xsd:unsignedInt;
-    <http://www.debs2017.org/gc/transitionsCount> "5"^^xsd:unsignedInt;
-    <http://www.debs2017.org/gc/maxClusterIterations> "50"^^xsd:unsignedInt.
+	hobbit:implementsAPI <http://www.example.org/exampleBenchmark/debsAPI>;
+	hobbit:imageName "git.project-hobbit.eu:4567/smirnp/smirnp-debs17" .

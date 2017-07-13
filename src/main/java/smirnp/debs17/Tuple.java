@@ -2,6 +2,8 @@ package smirnp.debs17;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 /**
@@ -9,7 +11,7 @@ import java.util.Date;
  */
 public class Tuple {
     //private final int skip = 3;
-    private Date timeStamp;
+    private LocalDateTime timeStamp;
     private final double[] values;
     private final int id;
 
@@ -18,7 +20,7 @@ public class Tuple {
         String[] splitted = str.split(", ");
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd hh:mm:ss");
         try {
-            timeStamp = format.parse(splitted[1]+" "+splitted[2]);
+            timeStamp = LocalDateTime.ofInstant(format.parse(splitted[1]+" "+splitted[2]).toInstant(), ZoneId.systemDefault());
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -36,7 +38,7 @@ public class Tuple {
         values = vector;
     }
 
-    public Date getTimestamp(){
+    public LocalDateTime getLocalDateTime(){
         if (timeStamp==null) {
             String test = "123";
         }
@@ -48,4 +50,8 @@ public class Tuple {
     }
 
     public int getId(){return id;}
+
+    public String getMachineId(){
+        return String.valueOf(new Double(values[0]).intValue());
+    }
 }

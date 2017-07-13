@@ -1,22 +1,14 @@
 package smirnp.debs17;
 
-import com.agt.ferromatikdata.anomalydetector.PlainAnomaly;
-import com.github.jsonldjava.core.JsonLdError;
-import com.github.jsonldjava.core.RDFDataset;
-import com.github.jsonldjava.core.RDFParser;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.impl.LiteralImpl;
 import org.apache.jena.util.FileManager;
-import org.apache.xerces.xni.parser.XMLInputSource;
-import smirnp.debs17.Clustering.Cluster;
 import smirnp.debs17.Clustering.KMeans;
 
-import java.io.ByteArrayInputStream;
-import java.text.ParseException;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,8 +25,9 @@ public class Processor {
     private final String metadataFilePath;
     private final Map<Integer, Integer> clustersPerPropertyId;
     private final Map<Integer, Double> probabilityThresholds;
+    private static final Charset CHARSET = Charset.forName("UTF-8");
     private final SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private final Pattern observIds = Pattern.compile("(WeidmullerMetadata#_[^>]+>)");
+    private final Pattern observIds = Pattern.compile("WeidmullerMetadata#_([^>]+)>");
     private final Pattern observValues  = Pattern.compile("\"([^\"]+)\"");
     private int[] observablePropertyIds;
     private int counter = 0;
@@ -52,9 +45,8 @@ public class Processor {
     }
 
     public void init(){
-
+        //getClass().getClassLoader().getResource(metadataFilePath).getFile()
         FileManager.get().addLocatorClassLoader(getClass().getClassLoader());
-
         Model model = FileManager.get().loadModel(metadataFilePath, null, "TURTLE");
         //Model model = FileManager.get().loadModel("data/1000molding_machine/1000molding_machine.metadata.nt", null, "TURTLE");
         StmtIterator iter = model.listStatements();
@@ -93,11 +85,11 @@ public class Processor {
         String test="123";
     }
 
-    public PlainAnomaly[] processTupleInBytes(byte[] data){
+    public List<byte[]> processTupleInBytes(byte[] data){
         return processTuple(new String(data));
     }
 
-    public PlainAnomaly[] processTuple(String str){
+    public List<byte[]> processTuple(String str){
         if(str.contains("http://"))
             str = extractTupleFromRDFString(str);
         Tuple tuple = new Tuple(counter, str);
@@ -107,39 +99,58 @@ public class Processor {
             return processWindow(window);
         }
         counter++;
-        return new PlainAnomaly[0];
+        return new ArrayList<byte[]>();
     }
+
 
     private String extractTupleFromRDFString(String str){
 
-
-        Matcher m = observIds.matcher(str);
         List<String[]> observationsIds = new ArrayList<>();
-        while (m.find()) {
-            String[] splitted = m.group(0).split("_");
-            observationsIds.add(new String[]{ splitted[splitted.length-2], splitted[splitted.length-1] });
-        }
-
-
-        Matcher m2 = observValues.matcher(str);
         List<String> observationsValues = new ArrayList<>();
-        int index=0;
-        String skipped="";
-        while (m2.find()) {
-            String val = m2.group(1);
-            if(index==0)skipped=val;
-            else if(index==1){
-                val = val.replace("T",", ").replace("-","");
-                val = val.substring(0, val.indexOf("+"));
-                observationsValues.add(val);
-                observationsValues.add(skipped);
-            }else
-                observationsValues.add(val);
-            index++;
+
+        try {
+
+
+            Matcher m = observIds.matcher(str);
+
+            while (m.find()) {
+                String val = m.group(1);
+                String[] splitted = val.split("_");
+                observationsIds.add(new String[]{splitted[splitted.length - 2], splitted[splitted.length - 1]});
+            }
+        }
+        catch (Exception e){
+            System.out.println(str);
         }
 
-        String ret = observationsIds.get(0)[0]+", "+String.join(", ", observationsValues);
-        String abc="123";
+        try{
+            Matcher m2 = observValues.matcher(str);
+
+            int index = 0;
+            String skipped = "";
+            while (m2.find()) {
+                String val = m2.group(1);
+                if (index == 0) skipped = val;
+                else if (index == 1) {
+                    val = val.replace("T", ", ").replace("-", "");
+                    if(val.indexOf("+")>0)
+                        val = val.substring(0, val.indexOf("+"));
+                    observationsValues.add(val);
+                    observationsValues.add(skipped);
+                } else
+                    observationsValues.add(val);
+                index++;
+            }
+        }
+        catch (Exception e){
+            System.out.println(str);
+        }
+
+        String ret = observationsIds.get(0)[0] + ", " + String.join(", ", observationsValues);
+        return ret;
+
+
+
 
 //        String ret = "";
 //        //Model model0 = FileManager.get().loadModel("/mnt/share133/smirnp/smirnpDebs17/src/main/resources/i40.ttl", null, "TURTLE");
@@ -175,11 +186,11 @@ public class Processor {
 //        } finally {
 //            if ( iter != null ) iter.close();
 //        }
-        return ret;
+
     }
 
-    public PlainAnomaly[] processWindow(Window window){
-        List<PlainAnomaly> ret = new ArrayList<>();
+    public List<byte[]> processWindow(Window window){
+        List<byte[]> ret = new ArrayList<>();
         double[][] dimentionedValues = window.getDimentionedValues();
 
         for(int propertyId : observablePropertyIds){
@@ -218,10 +229,32 @@ public class Processor {
                     if(nTrasitionsProbability<probabilityThresholds.get(propertyId)){
                         final double nTrasitionsProbabilityFinalized = nTrasitionsProbability;
                         Tuple tuple = window.getTuple(startIndex-1);
-                        Date date = tuple.getTimestamp();
-                        ret.add(new PlainAnomaly(){{ setDataPointIndex(tuple.getId()); setDimensionId(propertyId); setProbability(nTrasitionsProbabilityFinalized); }});
+                        LocalDateTime localDateTime = tuple.getLocalDateTime();
+
+                        System.out.println("Anomaly "+String.valueOf(nTrasitionsProbability)+" at "+localDateTime.toString()+" (Dim="+propertyId+" Timestamp="+tuple.getId()+")");
+
+//                        PlainAnomaly anomaly = new PlainAnomaly(){{
+//                            setDataPointIndex(tuple.getId());
+//                            setDimensionId(dimIndex);
+//                            setProbability(nTrasitionsProbabilityFinalized);
+//                        }};
+//                        WithinMachineAnomaly withinMachineAnomaly = new WithinMachineAnomaly(anomaly){{
+//                            setMachineId(tuple.getMachineId());
+//                            setLocalDateTime(localDateTime);
+//                            setIdWithinMachine(tuple.getMachineId());
+//                            setObservedPropertyId(String.valueOf(dimIndex));
+//                        }};
+//
+//                        try {
+//                            RdfAnomalyFormatter f = new RdfAnomalyFormatter(CHARSET);
+//                            f.init();
+//                            String string = f.format(withinMachineAnomaly);
+//                            ret.add(string.getBytes(CHARSET));
+//                        } catch (Exception e) {
+//                            String message = e.getMessage();
+//                        }
                         String alert = "123";
-                        System.out.println("Anomaly "+String.valueOf(nTrasitionsProbability)+" at "+date.toString()+" (Dim="+propertyId+" Timestamp="+tuple.getId()+")");
+
                     }
                     String test="123";
                 }else{
@@ -232,7 +265,7 @@ public class Processor {
 
             String test="123";
         }
-        return ret.toArray(new PlainAnomaly[ret.size()]);
+        return ret;
     }
 
     public static class ProcessorBuilder {
