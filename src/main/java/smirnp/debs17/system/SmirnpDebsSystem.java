@@ -1,53 +1,50 @@
-package smirnp.debs17;
+package smirnp.debs17.system;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.MessageProperties;
 import org.hobbit.core.Commands;
 import org.hobbit.core.Constants;
 import org.hobbit.core.components.AbstractCommandReceivingComponent;
 import org.hobbit.core.data.RabbitQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import smirnp.debs17.Processor;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Implementation of the system that can pass DEBSParrotBenchmark. In order to do that it receives
- * messages on {@code inputQueue} and sends all of them except {@code TERMINATION_MESSAGE} to {@code outputQueue}.
- * <p>
- * Receiving of the {@code TERMINATION_MESSAGE} on {@code inputQueue} means no more followed messages.
- * After the system has processed all the messages it must send {@code TERMINATION_MESSAGE} to {@code outputQueue}.
- * <p>
- * When building a docker image don't forget to include the following necessary environment variables (exemplar values are provided):
- * RABBIT_MQ_HOST_NAME_KEY="rabbit"
- * HOBBIT_SESSION_ID_KEY="mySessionId"
- * SYSTEM_URI_KEY="http://project-hobbit.eu/resources/debs2017/debsparrotsystemexample"
- * SYSTEM_PARAMETERS_MODEL_KEY="{}"
- * HOBBIT_EXPERIMENT_URI_KEY="http://project-hobbit.eu/resources/debs2017/experiment1"
- * <p>
- * See example Dockerfile and system.ttl in the deployment folder.
- * <p>
- * Note! Pay attention to the names of input and output queues. You shouldn't change them.
- * <p>
- * System execution code should be in {@link #execute()}
- * <p>
- * <p>
- *
- * @author Roman Katerinenko
- */
-class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
-    private static final Logger logger = LoggerFactory.getLogger(DebsParrotBenchmarkSystem.class);
+
+public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
+    public static final String TRANSITIONS_COUNT_INPUT_NAME = "http://www.debs2017.org/gc/transitionsCount";
+    public static final String MAX_CLUSTER_ITERATIONS_INPUT_NAME = "http://www.debs2017.org/gc/maxClusterIterations";
+    public static final String WINDOW_SIZE_INPUT_NAME = "http://www.debs2017.org/gc/windowSize";
+
+    private static final Logger logger = LoggerFactory.getLogger(SmirnpDebsSystem.class);
     private static final String TERMINATION_MESSAGE = "~~Termination Message~~";
     private static final Charset CHARSET = Charset.forName("UTF-8");
 
     private final CountDownLatch startExecutionBarrier = new CountDownLatch(1);
     private final CountDownLatch terminationMessageBarrier = new CountDownLatch(1);
+    private final Map<String, Object> parameters;
 
     private RabbitQueue inputQueue;
     private RabbitQueue outputQueue;
-    //private Processor processor;
+
+    private Processor processor;
+
+
+    public SmirnpDebsSystem(Map<String, Object> _parameters){
+        parameters = _parameters;
+    }
 
     @Override
     public void init() throws Exception {
@@ -60,17 +57,14 @@ class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
         }
         initCommunications();
 
-
-//        processor = new Processor.ProcessorBuilder()
-//                .windowSize(10)
-//                .iterationsCount(100)
-//                .transisionsCount(5)
-//                //.metadataFilePath("molding_machine_308dp.metadata.nt")
-//                .metadataFilePath("1000molding_machine.metadata.nt")
-//                .build();
-//
-//        processor.init();
-
+        processor = new Processor.ProcessorBuilder()
+                .windowSize((int)parameters.get(WINDOW_SIZE_INPUT_NAME))
+                .iterationsCount((int)parameters.get(MAX_CLUSTER_ITERATIONS_INPUT_NAME))
+                .transisionsCount((int)parameters.get(TRANSITIONS_COUNT_INPUT_NAME))
+                .metadataFilePath("data/1000molding_machine.metadata.nt")
+                //.metadataFilePath("molding_machine_308dp.metadata.nt")
+                .build();
+        processor.init();
 
         logger.debug("Initialized");
     }
@@ -88,7 +82,7 @@ class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
         return new RabbitQueue(channel, name);
     }
 
-    private Connection createConnection() throws IOException, TimeoutException {
+    protected Connection createConnection() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(getHost());
         return factory.newConnection();
@@ -103,7 +97,7 @@ class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
                                        AMQP.BasicProperties properties,
                                        byte[] body) throws IOException {
                 getChannel().basicAck(envelope.getDeliveryTag(), false);
-                DebsParrotBenchmarkSystem.this.handleDelivery(body);
+                SmirnpDebsSystem.this.handleDelivery(body);
             }
         });
     }
@@ -177,8 +171,6 @@ class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
         channel.basicPublish("", outputQueue.getName(), MessageProperties.PERSISTENT_BASIC, bytes);
     }
 
-
-
     private void handleDelivery(byte[] bytes) {
         try {
             String message = new String(bytes, CHARSET);
@@ -186,16 +178,18 @@ class DebsParrotBenchmarkSystem extends AbstractCommandReceivingComponent {
                 logger.debug("Got termination message");
                 terminationMessageBarrier.countDown();
             } else {
+                List<byte[]> anomalies = processor.processTupleInBytes(bytes);
+                for (byte[] anomaly : anomalies)
+                    send(anomaly);
                 logger.debug("Repeating message: {}", message);
-//                List<byte[]> anomalies = processor.processTupleInBytes(bytes);
-//                for (byte[] anomaly : anomalies)
-//                    send(anomaly);
                 //send(bytes);
             }
         } catch (Exception e) {
             logger.error("Exception", e);
         }
     }
+
+
 
     @Override
     public void close() throws IOException {

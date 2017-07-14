@@ -1,4 +1,4 @@
-package smirnp.debs17;
+package smirnp.debs17.processing;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,9 +39,6 @@ public class Tuple {
     }
 
     public LocalDateTime getLocalDateTime(){
-        if (timeStamp==null) {
-            String test = "123";
-        }
         return timeStamp;
     }
 

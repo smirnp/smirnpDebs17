@@ -12,7 +12,6 @@ import java.util.List;
  */
 public class Emitter {
 
-    //private List<String> lines;
     private final Processor processor;
     private final Path path;
     private final int linesPerSend;
@@ -25,7 +24,6 @@ public class Emitter {
 
     public void start(){
         try {
-            //byte[] bytes = Files.readAllBytes(path);
             List<String> lines = Files.readAllLines(path);
 
             int totalSent=0;
@@ -40,19 +38,9 @@ public class Emitter {
                 //emitBytes(bytes);
                 totalSent+=linesPerSend;
             }
-
-
-            String test="123";
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        try {
-//            lines = Files.readAllLines(path);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        for(String line : lines)
-//            emitBytes(line);
     }
 
     private void emit(String line){

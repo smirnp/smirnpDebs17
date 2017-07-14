@@ -1,4 +1,4 @@
-package smirnp.debs17;
+package smirnp.debs17.processing;
 
 import java.util.*;
 
@@ -17,7 +17,6 @@ public class Window{
         tuples = new Tuple[_windowSize];
         clusteringIndexes = _propertyIds;
         dimentionedValues = new double[_propertyIds.get(_propertyIds.size()-1)+2][windowSize];
-        String test = "";
     }
 
     public void put(Tuple tuple){
@@ -36,7 +35,6 @@ public class Window{
                         dimentionedValues[dim][j] = dimentionedValues[dim][j+1];
 
                 dimentionedValues[dim][windowSize-1] = tuple.getValues()[dim];
-                String test="123";
             }
 
         totalTuplesCounter++;
@@ -56,10 +54,5 @@ public class Window{
         return Math.min(windowSize, totalTuplesCounter);
     }
 
-//    public Date[] getTimestamps(){
-//        Date[] ret = new Date[tuples.length];
-//        for(int i=0; i< tuples.length; i++)
-//            ret[i] = tuples[i].getLocalDateTime();
-//        return ret;
-//    }
+
 }

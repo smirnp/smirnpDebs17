@@ -1,4 +1,4 @@
-package smirnp.debs17;
+package smirnp.debs17.processing;
 
 import com.google.common.primitives.Ints;
 import org.apache.commons.lang3.ArrayUtils;
@@ -17,13 +17,12 @@ public class Markov {
         probabilities = new ArrayList<>();
         for (int i = 0; i < clustersCount; i++)
             probabilities.add(new HashMap<Integer, Double>());
-
     }
 
     public List<Map<Integer, Double>> calculate(int[] pointClusterIds){
         for(int i=1; i<pointClusterIds.length; i++){
             int from = pointClusterIds[i-1];
-            int to = pointClusterIds[i]; //(i<pointsToClusterAssignment.length-1? pointsToClusterAssignment[i+1]: i);
+            int to = pointClusterIds[i];
             Double value = getProbability(from, to)+1;
             probabilities.get(from).put(to, value);
         }
@@ -33,11 +32,9 @@ public class Markov {
                 double sum = Stream.of(probabilities.get(from)).flatMap(e->e.values().stream()).mapToDouble(e->e).sum();
                 for(int to : probabilities.get(from).keySet())
                     probabilities.get(from).put(to, getProbability(from,to)/sum);
-                String test="123";
             }
 
         }
-        String test="123";
         return probabilities;
     }
 
@@ -50,7 +47,7 @@ public class Markov {
                 return probabilities.get(from).get(to);
         }
         catch (Exception e){
-            String test="123";
+            System.out.print(e.getMessage());
         }
         return 0.0;
     }
