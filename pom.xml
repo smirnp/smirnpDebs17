@@ -26,16 +26,7 @@
     </properties>
 
     <dependencies>
-
-        <!--<dependency>-->
-            <!--<groupId>com.agt</groupId>-->
-            <!--<artifactId>ferromatikdata</artifactId>-->
-            <!--<version>1.0</version>-->
-            <!--&lt;!&ndash;<scope>system</scope>&ndash;&gt;-->
-            <!--&lt;!&ndash;<systemPath>${project.basedir}/src/main/resources/original-wm-data-gen-1.0-SNAPSHOT.jar</systemPath>&ndash;&gt;-->
-        <!--</dependency>-->
-
-        <dependency>
+     <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>docker-client</artifactId>
             <version>8.1.0</version>
@@ -68,16 +59,16 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>/</directory>
-                <includes>
-                    <include>1000molding_machine.metadata.nt</include>
-                    <include>molding_machine_308dp.metadata.nt</include>
-                    <include>anomaly.nt</include>
-                </includes>
-            </resource>
-        </resources>
+        <!--<resources>-->
+            <!--<resource>-->
+                <!--<directory>/</directory>-->
+                <!--<includes>-->
+                    <!--<include>1000molding_machine.metadata.nt</include>-->
+                    <!--<include>molding_machine_308dp.metadata.nt</include>-->
+                    <!--<include>anomaly.nt</include>-->
+                <!--</includes>-->
+            <!--</resource>-->
+        <!--</resources>-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

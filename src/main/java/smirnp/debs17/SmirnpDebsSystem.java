@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -83,7 +84,7 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
                 .windowSize((int)parameters.get(WINDOW_SIZE_INPUT_NAME))
                 .iterationsCount((int)parameters.get(MAX_CLUSTER_ITERATIONS_INPUT_NAME))
                 .transisionsCount((int)parameters.get(TRANSITIONS_COUNT_INPUT_NAME))
-                .metadataFilePath("1000molding_machine.metadata.nt")
+                .metadataFilePath("data/1000molding_machine.metadata.nt")
                 //.metadataFilePath("molding_machine_308dp.metadata.nt")
                 .build();
         processor.init();
@@ -200,9 +201,9 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
                 logger.debug("Got termination message");
                 terminationMessageBarrier.countDown();
             } else {
-//                List<byte[]> anomalies = processor.processTupleInBytes(bytes);
-//                for (byte[] anomaly : anomalies)
-//                    send(anomaly);
+                List<byte[]> anomalies = processor.processTupleInBytes(bytes);
+                for (byte[] anomaly : anomalies)
+                    send(anomaly);
                 logger.debug("Repeating message: {}", message);
                 //send(bytes);
             }

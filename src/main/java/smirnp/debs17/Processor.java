@@ -1,12 +1,19 @@
 package smirnp.debs17;
 
+import com.google.common.io.Resources;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.impl.LiteralImpl;
 import org.apache.jena.util.FileManager;
 import smirnp.debs17.Clustering.KMeans;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,7 +37,9 @@ public class Processor {
     private final Pattern observIds = Pattern.compile("WeidmullerMetadata#_([^>]+)>");
     private final Pattern observValues  = Pattern.compile("\"([^\"]+)\"");
     private int[] observablePropertyIds;
+    private String anomalyTemplate;
     private int counter = 0;
+    private int anomalies = 0;
     private Window window;
     private KMeans kmeans;
     private Markov markov;
@@ -46,7 +55,17 @@ public class Processor {
 
     public void init(){
         //getClass().getClassLoader().getResource(metadataFilePath).getFile()
-        FileManager.get().addLocatorClassLoader(getClass().getClassLoader());
+
+
+        try {
+//            URL url  = Resources.getResource("anomaly.nt");
+//            anomalyTemplate = Resources.toString(url, CHARSET).replace("{","${");
+            anomalyTemplate = new String(Files.readAllBytes(Paths.get("data", "anomaly.nt")), CHARSET).replace("{","${");
+        } catch (IOException e) {
+            //e.printStackTrace();
+        }
+
+//        FileManager.get().addLocatorClassLoader(getClass().getClassLoader());
         Model model = FileManager.get().loadModel(metadataFilePath, null, "TURTLE");
         //Model model = FileManager.get().loadModel("data/1000molding_machine/1000molding_machine.metadata.nt", null, "TURTLE");
         StmtIterator iter = model.listStatements();
@@ -94,11 +113,12 @@ public class Processor {
             str = extractTupleFromRDFString(str);
         Tuple tuple = new Tuple(counter, str);
         window.put(tuple);
+        counter++;
 
         if(window.getActualTuplesCount()==windowSize) {
             return processWindow(window);
         }
-        counter++;
+
         return new ArrayList<byte[]>();
     }
 
@@ -218,7 +238,7 @@ public class Processor {
 
                     int startIndex = dimWindowPoints.length-transitionsCount;
                     int prevClusterId = pointsToClusterAssignment[startIndex-1];
-                    double nTrasitionsProbability = 1.0;
+                    Double nTrasitionsProbability = 1.0;
                     for(int i = startIndex; i<dimWindowPoints.length; i++){
                         int clusterId = pointsToClusterAssignment[i];
                         double prob = markov.getProbability(prevClusterId, clusterId);
@@ -227,32 +247,25 @@ public class Processor {
                     }
 
                     if(nTrasitionsProbability<probabilityThresholds.get(propertyId)){
-                        final double nTrasitionsProbabilityFinalized = nTrasitionsProbability;
+
                         Tuple tuple = window.getTuple(startIndex-1);
                         LocalDateTime localDateTime = tuple.getLocalDateTime();
 
                         System.out.println("Anomaly "+String.valueOf(nTrasitionsProbability)+" at "+localDateTime.toString()+" (Dim="+propertyId+" Timestamp="+tuple.getId()+")");
+                        Map valuesMap = new HashMap();
+                        valuesMap.put("anomaly_counter", anomalies);
+                        valuesMap.put("machine_uri", String.format("http://www.agtinternational.com/ontologies/WeidmullerMetadata#Machine_%d",tuple.getMachineId()));
+                        valuesMap.put("observed_property_uri", String.format("http://www.agtinternational.com/ontologies/WeidmullerMetadata#_%d_%d",tuple.getMachineId(), dimIndex));
+                        valuesMap.put("timestamp_uri", String.format("http://project-hobbit.eu/resources/debs2017#Timestamp_%d", tuple.getId()));
+                        valuesMap.put("probability_value", String.format("\"%s\"^^<http://www.w3.org/2001/XMLSchema#double>", String.valueOf(nTrasitionsProbability)));
+                        //valuesMap.put("probability_value", DatatypeConverter.printDouble(nTrasitionsProbability)+"^^<http://www.w3.org/2001/XMLSchema#double>");
+                        //valuesMap.put("probability_value", String.format("%d^^<http://www.w3.org/2001/XMLSchema#double>", new Double(nTrasitionsProbability)));
 
-//                        PlainAnomaly anomaly = new PlainAnomaly(){{
-//                            setDataPointIndex(tuple.getId());
-//                            setDimensionId(dimIndex);
-//                            setProbability(nTrasitionsProbabilityFinalized);
-//                        }};
-//                        WithinMachineAnomaly withinMachineAnomaly = new WithinMachineAnomaly(anomaly){{
-//                            setMachineId(tuple.getMachineId());
-//                            setLocalDateTime(localDateTime);
-//                            setIdWithinMachine(tuple.getMachineId());
-//                            setObservedPropertyId(String.valueOf(dimIndex));
-//                        }};
-//
-//                        try {
-//                            RdfAnomalyFormatter f = new RdfAnomalyFormatter(CHARSET);
-//                            f.init();
-//                            String string = f.format(withinMachineAnomaly);
-//                            ret.add(string.getBytes(CHARSET));
-//                        } catch (Exception e) {
-//                            String message = e.getMessage();
-//                        }
+                        StrSubstitutor sub = new StrSubstitutor(valuesMap);
+                        String anomalyRDF = sub.replace(anomalyTemplate);
+                        //anomalyRDF = anomalyRDF.replace("${probability_value}", "\"" + DatatypeConverter.printDouble(nTrasitionsProbability) + "\"^^<http://www.w3.org/2001/XMLSchema#double>");
+                        ret.add(anomalyRDF.getBytes(CHARSET));
+                        anomalies++;
                         String alert = "123";
 
                     }

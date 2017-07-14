@@ -51,7 +51,7 @@ public class Tuple {
 
     public int getId(){return id;}
 
-    public String getMachineId(){
-        return String.valueOf(new Double(values[0]).intValue());
+    public int getMachineId(){
+        return new Double(values[0]).intValue();
     }
 }
