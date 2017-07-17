@@ -2,4 +2,4 @@
 <http://project-hobbit.eu/resources/debs2017#Anomaly_{anomaly_counter}> <http://www.agtinternational.com/ontologies/I4.0#machine> <{machine_uri}> .
 <http://project-hobbit.eu/resources/debs2017#Anomaly_{anomaly_counter}> <http://www.agtinternational.com/ontologies/DEBSAnalyticResults#inAbnormalDimension> <{observed_property_uri}> .
 <http://project-hobbit.eu/resources/debs2017#Anomaly_{anomaly_counter}> <http://www.agtinternational.com/ontologies/DEBSAnalyticResults#hasTimeStamp> <{timestamp_uri}> .
-<http://project-hobbit.eu/resources/debs2017#Anomaly_{anomaly_counter}> <http://www.agtinternational.com/ontologies/DEBSAnalyticResults#hasProbabilityOfObservedAbnormalSequence> {probability_value}^^<http://www.w3.org/2001/XMLSchema#double>.
+<http://project-hobbit.eu/resources/debs2017#Anomaly_{anomaly_counter}> <http://www.agtinternational.com/ontologies/DEBSAnalyticResults#hasProbabilityOfObservedAbnormalSequence> {probability_value} .

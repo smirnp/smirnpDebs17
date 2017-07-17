@@ -34,7 +34,7 @@ public class Processor {
     private static final Charset CHARSET = Charset.forName("UTF-8");
     private final Pattern observIds = Pattern.compile("WeidmullerMetadata#_([^>]+)>");
     private final Pattern observValues  = Pattern.compile("\"([^\"]+)\"");
-    private int[] observablePropertyIds;
+    private int[] observableDimIndexes;
     private String anomalyTemplate;
     private int counter = 0;
     private int anomalies = 0;
@@ -74,24 +74,30 @@ public class Processor {
 
                 if (p.getLocalName().equals("hasNumberOfClusters")){
                     String[] splitted = s.getLocalName().split("_");
+                    int machineId = Integer.parseInt(splitted[splitted.length-2]);
                     int dimId = Integer.parseInt(splitted[splitted.length-1]);
+                    //String id =  String.format("{0}_{1}",splitted[splitted.length-2],splitted[splitted.length-1]);
                     int value = ((LiteralImpl) o).getInt();
-                    clustersPerPropertyId.put(dimId, value);
+
+                    if (machineId==59)
+                        clustersPerPropertyId.put(dimId, value);
                 }
 
                 if (s.getLocalName().startsWith("ProbabilityThreshold") && p.getLocalName().startsWith("value")){
                     String[] splitted = s.getLocalName().split("_");
+                    int machineId = Integer.parseInt(splitted[splitted.length-2]);
                     int dimId = Integer.parseInt(splitted[splitted.length-1]);
                     double value = ((LiteralImpl) o).getDouble();
-                    probabilityThresholds.put(dimId, value);
+                    if (machineId==59)
+                        probabilityThresholds.put(dimId, value);
                 }
             }
         } finally {
             if ( iter != null ) iter.close();
         }
 
-        observablePropertyIds = ArrayUtils.toPrimitive(clustersPerPropertyId.keySet().toArray(new Integer[clustersPerPropertyId.size()]));
-        Arrays.sort(observablePropertyIds);
+        observableDimIndexes = ArrayUtils.toPrimitive(clustersPerPropertyId.keySet().toArray(new Integer[clustersPerPropertyId.size()]));
+        Arrays.sort(observableDimIndexes);
 
         window = new Window(windowSize, new ArrayList<>(clustersPerPropertyId.keySet()));
     }
@@ -160,15 +166,17 @@ public class Processor {
         List<byte[]> ret = new ArrayList<>();
         double[][] dimentionedValues = window.getDimentionedValues();
 
-        for(int propertyId : observablePropertyIds){
-            int dimIndex = propertyId+1;
+        for(int dimIndex : observableDimIndexes){
+            //int dimIndex = propertyId+1;
 
-            if(clustersPerPropertyId.keySet().contains(propertyId)){ // processing only values, which have clusterCount defined
+            if(clustersPerPropertyId.keySet().contains(dimIndex)){ // processing only values, which have clusterCount defined
 
-                int clustersCount = clustersPerPropertyId.get(propertyId);
+                int clustersCount = clustersPerPropertyId.get(dimIndex);
 
                 double[] dimWindowPoints = dimentionedValues[dimIndex];
                 double[] firstKdistinctValues =  Arrays.stream(dimWindowPoints).skip(dimWindowPoints.length-window.getActualTuplesCount()).distinct().limit(clustersCount).toArray();
+
+
 
                 double[] centroids = firstKdistinctValues;
 
@@ -193,12 +201,16 @@ public class Processor {
                         prevClusterId = clusterId;
                     }
 
-                    if(nTrasitionsProbability<probabilityThresholds.get(propertyId)){
+                    if(counter==57 && dimIndex==106){
+                        String test="123";
+                    }
+
+                    if(nTrasitionsProbability<probabilityThresholds.get(dimIndex)){
 
                         Tuple tuple = window.getTuple(startIndex-1);
                         LocalDateTime localDateTime = tuple.getLocalDateTime();
 
-                        System.out.println("Anomaly "+String.valueOf(nTrasitionsProbability)+" at "+localDateTime.toString()+" (Dim="+propertyId+" Timestamp="+tuple.getId()+")");
+                        System.out.println("Anomaly "+String.valueOf(nTrasitionsProbability)+" at "+localDateTime.toString()+" (Dim="+dimIndex+" Timestamp="+tuple.getId()+")");
                         Map valuesMap = new HashMap();
                         valuesMap.put("anomaly_counter", anomalies);
                         valuesMap.put("machine_uri", String.format("http://www.agtinternational.com/ontologies/WeidmullerMetadata#Machine_%d",tuple.getMachineId()));

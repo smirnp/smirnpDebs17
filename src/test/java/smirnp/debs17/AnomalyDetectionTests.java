@@ -22,7 +22,7 @@ public class AnomalyDetectionTests {
                 .build();
         processor.init();
         //Emitter emitter = new Emitter(processor, Paths.get("data","1molding_machine/molding_machine_308dp.csv"), 1);
-        Emitter emitter = new Emitter(processor, Paths.get("data","molding_machine_308dp.nt"), 944);
+        Emitter emitter = new Emitter(processor, Paths.get("molding_machine_308dp.nt"), 944);
         emitter.start();
 
     }

@@ -26,8 +26,6 @@ public class Window{
             tuples[j]=tuples[j+1];
         tuples[windowSize-1] = tuple;
 
-
-
         for (int dim=0; dim<tuple.getValues().length; dim++)
             if (clusteringIndexes.contains(dim)){
                 //Shifting oldees(top) values
