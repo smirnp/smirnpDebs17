@@ -1,5 +1,6 @@
 package smirnp.debs17;
 
+import com.google.common.io.Resources;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.jena.rdf.model.*;
@@ -11,6 +12,7 @@ import smirnp.debs17.processing.Tuple;
 import smirnp.debs17.processing.Window;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -51,17 +53,18 @@ public class Processor {
         probabilityThresholds = new HashMap<>();
     }
 
-    public void init(){
+    public void init() throws Exception{
 
-        try {
-//            URL url  = Resources.getResource("anomaly.nt");
-//            anomalyTemplate = Resources.toString(url, CHARSET).replace("{","${");
-            anomalyTemplate = new String(Files.readAllBytes(Paths.get("data", "anomaly.nt")), CHARSET).replace("{","${");
-        } catch (IOException e) {
-            //e.printStackTrace();
-        }
 
-//        FileManager.get().addLocatorClassLoader(getClass().getClassLoader());
+        URL url  = Resources.getResource("anomaly.nt");
+        anomalyTemplate = Resources.toString(url, CHARSET).replace("{","${");
+
+//        byte[] templateBytes = Files.readAllBytes(Paths.get("anomaly.nt"));
+//        anomalyTemplate = new String(templateBytes, CHARSET).replace("{","${");
+
+
+//      FileManager.get().addLocatorClassLoader(getClass().getClassLoader());
+        System.out.print("Reading metadata from "+metadataFilePath);
         Model model = FileManager.get().loadModel(metadataFilePath, null, "TURTLE");
         StmtIterator iter = model.listStatements();
         try {
@@ -226,6 +229,7 @@ public class Processor {
                 }
             }
         }
+        System.out.println("Iter "+iterationsCount+ ": "+ ret);
         return ret;
     }
 

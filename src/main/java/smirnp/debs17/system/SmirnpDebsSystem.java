@@ -24,9 +24,13 @@ import java.util.concurrent.TimeoutException;
 
 
 public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
-    public static final String TRANSITIONS_COUNT_INPUT_NAME = "http://www.debs2017.org/gc/transitionsCount";
-    public static final String MAX_CLUSTER_ITERATIONS_INPUT_NAME = "http://www.debs2017.org/gc/maxClusterIterations";
-    public static final String WINDOW_SIZE_INPUT_NAME = "http://www.debs2017.org/gc/windowSize";
+
+    public static final String BENCHMARK_URI = "http://project-hobbit.eu/sml-benchmark-1.0/";
+    public static final String PROBABILITY_THRESHOLD_INPUT_NAME = BENCHMARK_URI+"probabilityThreshold";
+    public static final String WINDOW_SIZE_INPUT_NAME = BENCHMARK_URI+"windowSize";
+    public static final String TRANSITIONS_COUNT_INPUT_NAME = BENCHMARK_URI+"transitionsCount";
+    public static final String MAX_CLUSTER_ITERATIONS_INPUT_NAME = BENCHMARK_URI+"maxClusterIterations";
+
 
     private static final Logger logger = LoggerFactory.getLogger(SmirnpDebsSystem.class);
     private static final String TERMINATION_MESSAGE = "~~Termination Message~~";
@@ -44,11 +48,11 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
 
     public SmirnpDebsSystem(Map<String, Object> _parameters){
         parameters = _parameters;
+
     }
 
     @Override
     public void init() throws Exception {
-        logger.debug("Initializing...");
         super.init();
         String hobbitSessionId = getHobbitSessionId();
         if (hobbitSessionId.equals(Constants.HOBBIT_SESSION_ID_FOR_BROADCASTS) ||
@@ -57,16 +61,24 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
         }
         initCommunications();
 
-        processor = new Processor.ProcessorBuilder()
-                .windowSize((int)parameters.get(WINDOW_SIZE_INPUT_NAME))
-                .iterationsCount((int)parameters.get(MAX_CLUSTER_ITERATIONS_INPUT_NAME))
-                .transisionsCount((int)parameters.get(TRANSITIONS_COUNT_INPUT_NAME))
-                .metadataFilePath("data/1000molding_machine.metadata.nt")
-                //.metadataFilePath("molding_machine_308dp.metadata.nt")
-                .build();
-        processor.init();
+        try {
+            processor = new Processor.ProcessorBuilder()
+                    .windowSize((int) parameters.get(WINDOW_SIZE_INPUT_NAME))
+                    .iterationsCount((int) parameters.get(MAX_CLUSTER_ITERATIONS_INPUT_NAME))
+                    .transisionsCount((int) parameters.get(TRANSITIONS_COUNT_INPUT_NAME))
+                    .metadataFilePath("1000molding_machine.metadata.nt")
+                    //.metadataFilePath("molding_machine_308dp.metadata.nt")
+                    .build();
+            processor.init();
+        }
+        catch (Exception e){
+            logger.error("Processor was not initialized: "+ e.getMessage());
+            throw e;
+        }
 
         logger.debug("Initialized");
+        logger.debug("Sending SYSTEM_READY_SIGNAL...");
+        sendToCmdQueue(Commands.SYSTEM_READY_SIGNAL);   // Notifies PlatformController that it is ready to start
     }
 
     private void initCommunications() throws Exception {
@@ -124,8 +136,6 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
 
     @Override
     public void run() throws Exception {
-        logger.debug("Sending SYSTEM_READY_SIGNAL...");
-        sendToCmdQueue(Commands.SYSTEM_READY_SIGNAL);   // Notifies PlatformController that it is ready to start
         logger.debug("Waiting for TASK_GENERATION_FINISHED...");
         startExecutionBarrier.await();
         logger.debug("Starting system execution...");
@@ -194,11 +204,13 @@ public class SmirnpDebsSystem extends AbstractCommandReceivingComponent {
     @Override
     public void close() throws IOException {
         super.close();
+        //RabbitQueue[] channels = new RabbitQueue[]{ inputQueue, outputQueue };
         try {
             Channel channel = inputQueue.getChannel();
             Connection connection = channel.getConnection();
             channel.close();
             connection.close();
+
             channel = outputQueue.getChannel();
             connection = channel.getConnection();
             channel.close();

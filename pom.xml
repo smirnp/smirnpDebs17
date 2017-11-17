@@ -23,9 +23,67 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <jena.version>3.0.0</jena.version>
         <junit.version>4.11</junit.version>
+		<log4j.version>2.9.1</log4j.version>
+		<log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.agt</groupId>
+            <artifactId>sml-benchmark</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!--<dependency>-->
+            <!--<groupId>com.agtinternational.hobbit</groupId>-->
+            <!--<artifactId>localLibs-wm-datagen</artifactId>-->
+            <!--<version>1.0</version>-->
+            <!--&lt;!&ndash;<scope>system</scope>&ndash;&gt;-->
+            <!--&lt;!&ndash;<systemPath>${project.basedir}/src/main/resources/libs/original-wm-data-gen-1.0-SNAPSHOT.jar</systemPath>&ndash;&gt;-->
+        <!--</dependency>-->
+
+	<!-- https://mvnrepository.com/artifact/org.log4mongo/log4mongo-java -->
+        <dependency>
+            <groupId>org.log4mongo</groupId>
+            <artifactId>log4mongo-java</artifactId>
+            <version>0.9.0</version>
+        </dependency>
+
+
+		   <!--<dependency>-->
+                <!--<groupId>org.apache.logging.log4j</groupId>-->
+                <!--<artifactId>log4j-api</artifactId>-->
+                <!--<version>${log4j.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.apache.logging.log4j</groupId>-->
+                <!--<artifactId>log4j-slf4j-impl</artifactId>-->
+                <!--<version>${log4j.version}</version>-->
+            <!--</dependency>-->
+
+            <!--<dependency>-->
+                <!--<groupId>org.apache.logging.log4j</groupId>-->
+                <!--<artifactId>log4j-core</artifactId>-->
+                <!--<version>${log4j.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.slf4j</groupId>-->
+                <!--<artifactId>slf4j-log4j12</artifactId>-->
+                <!--<version>${log4j-over-slf4j.version}</version>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.slf4j</groupId>-->
+                <!--<artifactId>log4j-over-slf4j</artifactId>-->
+                <!--<version>${log4j-over-slf4j.version}</version>-->
+            <!--</dependency>-->
+
+        <dependency>
+            <groupId>com.agtinternational.hobbit</groupId>
+            <artifactId>hobbit-java-sdk</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
      <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>docker-client</artifactId>
@@ -35,24 +93,50 @@
             <groupId>org.hobbit</groupId>
             <artifactId>core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
             <type>pom</type>
             <version>${jena.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-text</artifactId>
             <version>${jena.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- System rules for setting environment variables -->
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.16.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -115,6 +199,27 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-assembly-plugin</artifactId>-->
+                <!--<configuration>-->
+                    <!--<descriptorRefs>-->
+                        <!--<descriptorRef>jar-with-dependencies</descriptorRef>-->
+                        <!--&lt;!&ndash;<descriptorRef>jar</descriptorRef>&ndash;&gt;-->
+                    <!--</descriptorRefs>-->
+                    <!--<appendAssemblyId>false</appendAssemblyId>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>make-assembly</id> &lt;!&ndash; this is used for inheritance merges &ndash;&gt;-->
+                        <!--<phase>compile</phase> &lt;!&ndash; bind to the packaging phase &ndash;&gt;-->
+                        <!--<goals>-->
+                            <!--<goal>single</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
         </plugins>
     </build>
 

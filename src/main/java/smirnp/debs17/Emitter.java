@@ -44,6 +44,7 @@ public class Emitter {
     }
 
     private void emit(String line){
+
         processor.processTuple(line);
     }
 

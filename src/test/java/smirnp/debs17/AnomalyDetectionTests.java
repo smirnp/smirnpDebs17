@@ -11,10 +11,10 @@ import java.nio.file.Paths;
 public class AnomalyDetectionTests {
 
     @Test
-    public void checkAnomalyDetection(){
+    public void checkAnomalyDetection() throws Exception{
 
         Processor processor = new Processor.ProcessorBuilder()
-                .windowSize(10)
+                .windowSize(500)
                 .iterationsCount(100)
                 .transisionsCount(5)
                 .metadataFilePath("1000molding_machine.metadata.nt")
@@ -22,7 +22,7 @@ public class AnomalyDetectionTests {
                 .build();
         processor.init();
         //Emitter emitter = new Emitter(processor, Paths.get("data","1molding_machine/molding_machine_308dp.csv"), 1);
-        Emitter emitter = new Emitter(processor, Paths.get("molding_machine_308dp.nt"), 944);
+        Emitter emitter = new Emitter(processor, Paths.get("data","molding_machine_308dp.nt"), 944);
         emitter.start();
 
     }

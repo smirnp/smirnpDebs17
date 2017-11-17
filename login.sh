@@ -1,0 +1,1 @@
+docker login git.project-hobbit.eu:4567
